@@ -7,15 +7,20 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func NewHTTPServer(addr string) *http.Server {
-	httpsrv := newHTTPServer()
-	r := mux.NewRouter()
-	r.HandleFunc("/", httpsrv.handleProduce).Methods("POST")
-	r.HandleFunc("/", httpsrv.handleConsume).Methods("GET")
-	return &http.Server{
-		Addr:    addr,
-		Handler: r,
-	}
+type ProduceRequest struct {
+	Record Record `json:"record"`
+}
+
+type ProduceResponse struct {
+	Offset uint64 `json:"offset"`
+}
+
+type ConsumeRequest struct {
+	Offset uint64 `json:"offset"`
+}
+
+type ConsumeResponse struct {
+	Record Record `json:"record"`
 }
 
 type httpServer struct {
@@ -26,14 +31,6 @@ func newHTTPServer() *httpServer {
 	return &httpServer{
 		Log: NewLog(),
 	}
-}
-
-type ProduceRequest struct {
-	Record Record `json:"record"`
-}
-
-type ProduceResponse struct {
-	Offset uint64 `json:"offset"`
 }
 
 func (s *httpServer) handleProduce(w http.ResponseWriter, r *http.Request) {
@@ -54,14 +51,6 @@ func (s *httpServer) handleProduce(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-}
-
-type ConsumeRequest struct {
-	Offset uint64 `json:"offset"`
-}
-
-type ConsumeResponse struct {
-	Record Record `json:"record"`
 }
 
 func (s *httpServer) handleConsume(w http.ResponseWriter, r *http.Request) {
@@ -85,5 +74,16 @@ func (s *httpServer) handleConsume(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
+	}
+}
+
+func NewHTTPServer(addr string) *http.Server {
+	httpsrv := newHTTPServer()
+	r := mux.NewRouter()
+	r.HandleFunc("/", httpsrv.handleProduce).Methods("POST")
+	r.HandleFunc("/", httpsrv.handleConsume).Methods("GET")
+	return &http.Server{
+		Addr:    addr,
+		Handler: r,
 	}
 }
